@@ -64,9 +64,12 @@ vector<Malie_Moji> CMalie_VMParse::ParseScenario(vector<wstring> &chapterName,ve
 	const int MALIE_NAME = pMalieExec->GetFuncId(L"MALIE_NAME");
 	const int MALIE_LABLE = pMalieExec->GetFuncId(L"MALIE_LABLE");
 	const int tag = pMalieExec->GetFuncId(L"tag");
+	const int FrameLayer_SendMessage = pMalieExec->GetFuncId(L"FrameLayer_SendMessage");
+	const int System_GetResult = pMalieExec->GetFuncId(L"System_GetResult");
 	Malie_Moji moji;
 	vector<DWORD> jmpTable;
 	vector<DWORD>::iterator it;
+	vector<DWORD> selectTable;
 	fprintf(stderr,"Start parsing scenario p-code...\n\n");
 	for (;*pCurrent!=0x33;)
 	{
@@ -106,6 +109,7 @@ vector<Malie_Moji> CMalie_VMParse::ParseScenario(vector<wstring> &chapterName,ve
 				while(!vmStack.empty()) vmStack.pop();
 				v.push_back(moji);
 				moji.name = L"";
+				selectTable.clear();
 			}
 			else if (pParma==MALIE_NAME)
 			{
@@ -119,6 +123,23 @@ vector<Malie_Moji> CMalie_VMParse::ParseScenario(vector<wstring> &chapterName,ve
 					it = jmpTable.begin();
 					offset+=szCode;
 					continue;
+				}
+			}
+			else if (pParma == System_GetResult)
+			{
+				for each (DWORD x in selectTable)
+				{
+					fprintf(stderr, "Select %ls\n", x);
+				}
+			}
+			else if (pParma == FrameLayer_SendMessage)
+			{
+				vmStack.pop(); vmStack.pop(); vmStack.pop();
+
+				vmStack.pop(); int loc = vmStack.top();
+				if (loc>0)
+				{
+					selectTable.push_back(loc);
 				}
 			}
 		}
@@ -176,12 +197,13 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		fprintf(fdiasm,"push R32\n");
 		break;
 	case 0x7://vPop R32 len:0
+		vmStack.pop();
 		fprintf(fdiasm,"pop R32\n");
 		break;
 	case 0x8://vPush len:4
 	case 0xD://vPush len:4
 		pParma = *(PDWORD)pCode;
-		vmStack.push(pParma);
+		vmStack.push(pParma | 0x80000000);
 		szCode+=4;
 		fprintf(fdiasm,"push 0x%X\n",pParma);
 		break;
@@ -194,7 +216,8 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		{
 			*mask=0;
 		}
-		fprintf(fdiasm,"push \"%ls\"\n",pParma+VM_DATA);
+		vmStack.push(int(pParma + VM_DATA));
+		fprintf(fdiasm, "push \"%ls\";#0x%06X\n", vmStack.top(), vmStack.top());
 		break;
 	case 0xA://vPushStr len:2
 		pParma = *(PWORD)pCode;
@@ -205,7 +228,8 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		{
 			*mask=0;
 		}
-		fprintf(fdiasm,"push \"%ls\"\n",pParma+VM_DATA);
+		vmStack.push(int(pParma + VM_DATA));
+		fprintf(fdiasm, "push \"%ls\";#0x%06X\n", vmStack.top(), vmStack.top());
 		break;
 	case 0xB://none len:0
 		break;
@@ -218,20 +242,22 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		{
 			*mask=0;
 		}
-		fprintf(fdiasm,"push \"%ls\"\n",pParma+VM_DATA);
+		vmStack.push(int(pParma + VM_DATA));
+		fprintf(fdiasm, "push \"%ls\";#0x%06X\n", vmStack.top(), vmStack.top());
 		break;
 	case 0xE://vPop len:0
+		vmStack.pop();
 		fprintf(fdiasm,"pop\n");
 		break;
 	case 0xF://vPush 0 len:0
-		vmStack.push(0);
+		vmStack.push(0 | 0x80000000);
 		fprintf(fdiasm,"push 0\n");
 		break;
 	case 0x10://无对应指令 len:0
 		break;
 	case 0x11://vPush len:1
 		pParma = *pCode;
-		vmStack.push(pParma);
+		vmStack.push(pParma | 0x80000000);
 		++szCode;
 		fprintf(fdiasm,"push 0x%X\n",pParma);
 		break;
@@ -239,30 +265,38 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		fprintf(fdiasm,"push [sp]\n");
 		break;
 	case 0x13://vNeg len:0
-		fprintf(fdiasm,"neg\n");
+		fprintf(fdiasm, "neg\n");
 		break;
 	case 0x14://vAdd len:0
-		fprintf(fdiasm,"add\n");
+		vmStack.pop();
+		fprintf(fdiasm, "add\n");
 		break;
 	case 0x15://vSub len:0
+		vmStack.pop();
 		fprintf(fdiasm,"sub\n");
 		break;
 	case 0x16://vMul len:0
+		vmStack.pop();
 		fprintf(fdiasm,"mul\n");
 		break;
 	case 0x17://vDiv len:0
+		vmStack.pop();
 		fprintf(fdiasm,"div\n");
 		break;
 	case 0x18://vMod len:0
+		vmStack.pop();
 		fprintf(fdiasm,"mod\n");
 		break;
 	case 0x19://vAnd len:0
+		vmStack.pop();
 		fprintf(fdiasm,"and\n");
 		break;
 	case 0x1A://vOr len:0
+		vmStack.pop();
 		fprintf(fdiasm,"or\n");
 		break;
 	case 0x1B://vXor len:0
+		vmStack.pop();
 		fprintf(fdiasm,"xor\n");
 		break;
 	case 0x1C://vNot len:0
@@ -272,36 +306,46 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		fprintf(fdiasm,"BOOL(param)\n");
 		break;
 	case 0x1E://vBOOL(param1&&param2) len:0
+		vmStack.pop();
 		fprintf(fdiasm,"BOOL(param1&&param2)\n");
 		break;
-	case 0x1F://vBOOL(param1||param2) len:0
+	case 0x1F://vBOOL(param1||param2)
+		vmStack.pop();
 		fprintf(fdiasm,"BOOL(param1||param2)\n");
 		break;
 	case 0x20://!vBOOL(param) len:0
 		fprintf(fdiasm,"!BOOL(param)\n");
 		break;
 	case 0x21://vIsL len:0
+		vmStack.pop();
 		fprintf(fdiasm,"IsL\n");
 		break;
 	case 0x22://vIsLE len:0
-		fprintf(fdiasm,"IsLE\n");
+		vmStack.pop();
+		fprintf(fdiasm, "IsLE\n");
 		break;
 	case 0x23://vIsNLE len:0
-		fprintf(fdiasm,"IsNLE\n");
+		vmStack.pop();
+		fprintf(fdiasm, "IsNLE\n");
 		break;
 	case 0x24://vIsNL len:0
-		fprintf(fdiasm,"IsNL\n");
+		vmStack.pop();
+		fprintf(fdiasm, "IsNL\n");
 		break;
 	case 0x25://vIsEQ len:0
-		fprintf(fdiasm,"IsEQ\n");
+		vmStack.pop();
+		fprintf(fdiasm, "IsEQ\n");
 		break;
 	case 0x26://vIsNEQ len:0
-		fprintf(fdiasm,"IsNEQ\n");
+		vmStack.pop();
+		fprintf(fdiasm, "IsNEQ\n");
 		break;
 	case 0x27://vShl len:0
+		vmStack.top();
 		fprintf(fdiasm,"shl\n");
 		break;
 	case 0x28://vSar len:0
+		vmStack.pop();
 		fprintf(fdiasm,"sar\n");
 		break;
 	case 0x29://vInc len:0
@@ -320,6 +364,7 @@ size_t CMalie_VMParse::VMParse(unsigned char *pCode)
 		pParma = *(PDWORD)pCode;
 		szCode+=4;
 		fprintf(fdiasm,"call %ls\n",pMalieExec->GetFuncName(pParma).c_str());
+		vmStack.push(0 | 0x80000000);//ret val
 		break;
 	case 0x2E://vAdd len:0
 		fprintf(fdiasm,"add\n");

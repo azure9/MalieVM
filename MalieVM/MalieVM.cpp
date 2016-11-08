@@ -14,8 +14,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	MalieExec exec("exec.dat");
 	exec.ExportStrByCode();
 	_getch();
-// 	CMalie_VMParse vm(&exec);//0xF8Aexec.GetFuncOffset(L"_ms_message")
-// 	vm.diasm(exec.GetFuncOffset(L"maliescenario"),0x100000);
+ 	//CMalie_VMParse vm(&exec);//0xF8Aexec.GetFuncOffset(L"_ms_message")
+ 	//vm.diasm(exec.GetFuncOffset(L"maliescenario"),0x100000);
 // 	freopen("out.txt","wt,ccs=UNICODE",stdout);
 // 	exec.ExportStrByCode();
 //	printf("0x%X",exec.GetFuncOffset(L"system_onInit"));

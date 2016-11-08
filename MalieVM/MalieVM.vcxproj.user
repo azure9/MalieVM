@@ -4,7 +4,7 @@
     <LocalDebuggerCommandArguments>
     </LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>D:\Software\deCrypt\KDays\MalieSystem\Dies irae  -Amantes amentes-</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>D:\Projects\Github\sync\MalieVM\Release</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Public|Win32'">
     <LocalDebuggerCommandArguments />
