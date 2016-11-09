@@ -105,8 +105,10 @@ vector<Malie_Moji> CMalie_VMParse::ParseScenario(vector<wstring> &chapterName,ve
 			}
 			else if (pParma==_ms_message)
 			{
-				moji.index = vmStack.top();
+				vmStack.pop();
+				moji.index = vmStack.top()&~0x80000000;
 				while(!vmStack.empty()) vmStack.pop();
+				vmStack.push(0);
 				v.push_back(moji);
 				moji.name = L"";
 				selectTable.clear();
@@ -132,11 +134,10 @@ vector<Malie_Moji> CMalie_VMParse::ParseScenario(vector<wstring> &chapterName,ve
 					fprintf(stderr, "Select %ls\n", x);
 				}
 			}
-			else if (pParma == FrameLayer_SendMessage)
+			else if (pParma == FrameLayer_SendMessage && vmStack.size()>4)
 			{
-				vmStack.pop(); vmStack.pop(); vmStack.pop();
-
-				vmStack.pop(); int loc = vmStack.top();
+				vmStack.pop(); vmStack.pop(); vmStack.pop(); vmStack.pop();
+				int loc = vmStack.top();
 				if (loc>0)
 				{
 					selectTable.push_back(loc);
