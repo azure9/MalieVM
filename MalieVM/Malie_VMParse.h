@@ -36,6 +36,5 @@ private:
 	unsigned char *VM_DATA;
 	MalieExec *pMalieExec;
 	FILE *fdiasm;
-	unsigned int regs[0x1000];
 };
 
