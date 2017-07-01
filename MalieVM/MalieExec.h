@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include "MalieCHS.h"
 
 using namespace std;
 
@@ -168,6 +169,7 @@ private:
 	map<wstring,VM_FUNCTION> funcList;
 	vector<VM_FUNCTION> vecFuncList;
 	vector<STRING_INFO> vStrIndex;
+	//CMalieCHS dbCHS;
 	unsigned char *pStrTable;
 	unsigned char *pVM_CODE;
 	unsigned char *pVM_DATA;
@@ -193,6 +195,9 @@ public:
 	wstring GetFuncName(size_t funcId);
 	int GetFuncId(wstring funcName);
 	wstring ParseString(DWORD dwIndex);
+	wstring ImportString(DWORD dwIndex, wstring chsLine);
+	pair<vector<STRING_INFO>, wstring> RebuildStringSection(CMalieCHS &db);
+	int RebuildVMBinary(CMalieCHS &scene);
 	int ExportStrByCode(void);
 	unsigned char * GetVMCodeBase(void);
 	unsigned char * GetVMDataBase(void);

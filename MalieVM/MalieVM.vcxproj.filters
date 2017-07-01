@@ -30,6 +30,15 @@
     <ClInclude Include="Malie_VMParse.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MalieScene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MalieCHS.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MojiCHS.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -45,6 +54,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MalieScene.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MalieCHS.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MojiCHS.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

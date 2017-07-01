@@ -241,6 +241,75 @@ wstring MalieExec::ParseString(DWORD dwIndex)
 	return move(outLine);
 }
 
+wstring MalieExec::ImportString(DWORD dwIndex,wstring chsLine)
+{
+	bool fl_rub = 0, fl_vol = 0;
+
+	wstring strLine(
+		(WCHAR *)&pStrTable[vStrIndex[dwIndex].offset],
+		(WCHAR *)&pStrTable[vStrIndex[dwIndex].offset + vStrIndex[dwIndex].length]
+		);
+
+	wstring outLine(strLine.size() + 3, 0);
+
+	vector<wstring> tokens;
+	//TODO split chsLine in tokens
+	//
+
+
+
+	size_t len = 0;
+	size_t token_i = 0;
+	for (size_t idx = 0; idx < strLine.size(); ++idx)
+	{
+		if (strLine[idx] < 0x20)
+		{
+			outLine[len++] = strLine[idx];
+		}
+		else
+		{
+			outLine += tokens[token_i];
+			len += tokens[token_i].size();
+			for (int i = 0; i < strLine.size() - idx; ++i)
+			{
+				if (strLine[idx + 1] > 0x20)
+				{
+					idx++;
+				}
+			}
+			token_i++;
+		}
+	}
+
+	return move(outLine);
+}
+
+pair<vector<STRING_INFO>, wstring> MalieExec::RebuildStringSection(CMalieCHS &db)
+{
+	vector<STRING_INFO> vChsIndex;
+	size_t offset = 0;
+	wstring buf;
+	for (size_t i = 0; i < vStrIndex.size(); ++i)
+	{
+		auto && jis = db.GetString(i);
+		auto && chs = ImportString(i, jis);
+		vChsIndex.push_back(STRING_INFO(offset, chs.size()));
+		offset += chs.size();
+		buf += chs;
+	}
+	return move(pair<vector<STRING_INFO>,wstring>(move(vChsIndex),move(buf)));
+}
+
+int MalieExec::RebuildVMBinary(CMalieCHS &scene)
+{
+	auto && str = RebuildStringSection(scene);
+	auto && x = str.first;
+	auto && y = str.second;
+	//TODO
+	// what the fuck is crypted and ziped real mean?
+	
+	return 0;
+}
 
 int MalieExec::ExportStrByCode(void)
 {

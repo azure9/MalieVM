@@ -4,11 +4,11 @@
     <LocalDebuggerCommandArguments>
     </LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>D:\Projects\Github\sync\MalieVM\Release</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>D:\Projects\ephemeral\MalieVM\txt</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Public|Win32'">
     <LocalDebuggerCommandArguments />
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>D:\Software\deCrypt\KDays\MalieSystem\Dies irae  -Amantes amentes-</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>D:\Projects\ephemeral\MalieVM\txt</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>
