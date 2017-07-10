@@ -14,7 +14,7 @@
 using namespace std;
 
 
-#define IMPORT_SIGNATURE L'¡ø'
+#define IMPORT_SIGNATURE L'¡ô'
 #define CHS_SIGNATURE L'¡ñ'
 
 class CMojiCHS

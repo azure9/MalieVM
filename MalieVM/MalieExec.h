@@ -178,6 +178,8 @@ private:
 	DWORD szVM_DATA;
 	DWORD szStrTable;
 	DWORD cntStrIndex;
+	
+	size_t offStrTable;
 
 	void GetNext(execstream *bin)
 	{
@@ -197,7 +199,7 @@ public:
 	wstring ParseString(DWORD dwIndex);
 	wstring ImportString(DWORD dwIndex, wstring chsLine);
 	pair<vector<STRING_INFO>, wstring> RebuildStringSection(CMalieCHS &db);
-	int RebuildVMBinary(CMalieCHS &scene);
+	int RebuildVMBinary(CMalieCHS &scene, char *lpInFile, char *lpOutFile);
 	int ExportStrByCode(void);
 	unsigned char * GetVMCodeBase(void);
 	unsigned char * GetVMDataBase(void);

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "MalieExec.h"
 #include "Malie_VMParse.h"
 #include "common.h"
@@ -15,7 +15,7 @@ MalieExec::MalieExec(char *lpFileName)
 		GetNext(&bin);
 		bin.seek(sizeof(DWORD)*4,FILE_CURRENT);	
 	}
-	//ÖÁÓÚÕâÀïÎªÉ¶ÒªÌø¹ıÒ»¸öDWÎÒÒ²ÍüÁË¡¢×î³õµÄ½âÎöÀïÃæÃ»ÓĞĞ´
+	//è‡³äºè¿™é‡Œä¸ºå•¥è¦è·³è¿‡ä¸€ä¸ªDWæˆ‘ä¹Ÿå¿˜äº†ã€æœ€åˆçš„è§£æé‡Œé¢æ²¡æœ‰å†™
 	//  [7/20/2013 Azure]
 	bin.seek(sizeof(DWORD),FILE_CURRENT);//skip 0x3130 dwCnt = 0x5F4
 
@@ -80,6 +80,7 @@ MalieExec::MalieExec(char *lpFileName)
 	//////////////////////////////////////////////////////////////////////////
 	// strTable
 
+	offStrTable = bin.seek(0, FILE_CURRENT);
 	DWORD unkSize = bin.readdw();
 	if (unkSize*8 >bin.GetFileSize()-bin.seek(0,FILE_CURRENT))
 	{
@@ -204,25 +205,25 @@ wstring MalieExec::ParseString(DWORD dwIndex)
 		case 7:
 			switch (strLine[++idx])
 			{
-			case 0x0001://µİ¹éµ÷ÓÃÎÄ×Ö¶ÁÈ¡£¬È»ºó¼ÌĞø´¦Àí£¨°üº¬×¢ÊÍµÄÎÄ×Ö£©
+			case 0x0001://é€’å½’è°ƒç”¨æ–‡å­—è¯»å–ï¼Œç„¶åç»§ç»­å¤„ç†ï¼ˆåŒ…å«æ³¨é‡Šçš„æ–‡å­—ï¼‰
 				outLine[len++]=TO_RUB;
 				fl_rub=1;
 				break;
-			case 0x0004://ÏÂÒ»¾ä×Ô¶¯³öÀ´
+			case 0x0004://ä¸‹ä¸€å¥è‡ªåŠ¨å‡ºæ¥
 				outLine[len++]=NXL;
 				break;
-			case 0x0006://´ú±í±¾¾ä½áÊø
+			case 0x0006://ä»£è¡¨æœ¬å¥ç»“æŸ
 				outLine[len++]=TO_RTN;
 				break;
-			case 0x0007://µİ¹éµ÷ÓÃÎÄ×Ö¶ÁÈ¡È»ºówcslen£¬Ìø¹ı²»´¦Àí¡£Ó¦¸ÃÊÇÓÃÓÚ×¢ÊÍ
+			case 0x0007://é€’å½’è°ƒç”¨æ–‡å­—è¯»å–ç„¶åwcslenï¼Œè·³è¿‡ä¸å¤„ç†ã€‚åº”è¯¥æ˜¯ç”¨äºæ³¨é‡Š
 				++idx;
 				idx+=wcslen(&strLine[idx]);
 				break;
-			case 0x0008://LoadVoice ºóÃæÊÇVoiceÃû
+			case 0x0008://LoadVoice åé¢æ˜¯Voiceå
 				outLine[len++]=TO_VOL;
 				fl_vol=1;
 				break;
-			case 0x0009://LoadVoice½áÊø
+			case 0x0009://LoadVoiceç»“æŸ
 				outLine[len++]=EOVOL;
 				break;
 			default:
@@ -250,16 +251,40 @@ wstring MalieExec::ImportString(DWORD dwIndex,wstring chsLine)
 		(WCHAR *)&pStrTable[vStrIndex[dwIndex].offset + vStrIndex[dwIndex].length]
 		);
 
-	wstring outLine(strLine.size() + 3, 0);
+	wstring oldLine(strLine);
 
 	vector<wstring> tokens;
-	//TODO split chsLine in tokens
-	//
+	auto x = chsLine.find_first_of(L'â€»');
+	if (x != wstring::npos)
+	{
+		chsLine = wstring(&chsLine[x+1], &chsLine[chsLine.size() - 1]);
+	}
 
+	for (auto ch = wcstok(&chsLine[0], L"â–²â–³â–¼â–½â—â—†â—â˜…â€»âŠ™"); ch; ch = wcstok(NULL, L"â–²â–³â–¼â–½â—â—†â—â˜…â€»âŠ™"))
+	{
+		tokens.push_back(ch);
+	}
 
+	vector<wstring> old_tokens;
+	WCHAR *old_ar = L"\x1\x2\x3\x4\x5\x6\x7\x8\x9\xb\xc\xd\xe\xf\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
+	for (int i = 0; i < oldLine.size(); ++i)
+	{
+		if (oldLine[i] == 0)
+		{
+			oldLine[i] = 1;
+		}
+	}
+	for (auto ch = wcstok(&oldLine[0], old_ar); ch; ch = wcstok(NULL, old_ar))
+	{
+		old_tokens.push_back(ch);
+	}
 
 	size_t len = 0;
 	size_t token_i = 0;
+	wstring outLine;
+
+	outLine.resize(max(chsLine.size(),strLine.size()) + 30);
+
 	for (size_t idx = 0; idx < strLine.size(); ++idx)
 	{
 		if (strLine[idx] < 0x20)
@@ -268,20 +293,14 @@ wstring MalieExec::ImportString(DWORD dwIndex,wstring chsLine)
 		}
 		else
 		{
-			outLine += tokens[token_i];
+			memcpy(&outLine[len], &tokens[token_i][0], sizeof(WCHAR)*tokens[token_i].size());
 			len += tokens[token_i].size();
-			for (int i = 0; i < strLine.size() - idx; ++i)
-			{
-				if (strLine[idx + 1] > 0x20)
-				{
-					idx++;
-				}
-			}
+			idx += old_tokens[token_i].size()-1;
 			token_i++;
 		}
 	}
 
-	return move(outLine);
+	return wstring(&outLine[0],&outLine[len]);
 }
 
 pair<vector<STRING_INFO>, wstring> MalieExec::RebuildStringSection(CMalieCHS &db)
@@ -289,9 +308,15 @@ pair<vector<STRING_INFO>, wstring> MalieExec::RebuildStringSection(CMalieCHS &db
 	vector<STRING_INFO> vChsIndex;
 	size_t offset = 0;
 	wstring buf;
+	fprintf(stderr, "VM binary string counts:%d\nLoaded chs string counts:%d\n", vStrIndex.size(), db.GetSize());
 	for (size_t i = 0; i < vStrIndex.size(); ++i)
 	{
+		fprintf(stderr, "Cursor: %d\n", i);
 		auto && jis = db.GetString(i);
+		if (jis.empty())
+		{
+			fprintf(stderr, "Error! Empty string got from chs db. Line: %d\n", i);
+		}
 		auto && chs = ImportString(i, jis);
 		vChsIndex.push_back(STRING_INFO(offset, chs.size()));
 		offset += chs.size();
@@ -300,14 +325,28 @@ pair<vector<STRING_INFO>, wstring> MalieExec::RebuildStringSection(CMalieCHS &db
 	return move(pair<vector<STRING_INFO>,wstring>(move(vChsIndex),move(buf)));
 }
 
-int MalieExec::RebuildVMBinary(CMalieCHS &scene)
+int MalieExec::RebuildVMBinary(CMalieCHS &scene,char *lpInFile,char *lpOutFile)
 {
 	auto && str = RebuildStringSection(scene);
 	auto && x = str.first;
 	auto && y = str.second;
-	//TODO
-	// what the fuck is crypted and ziped real mean?
-	
+	size_t cbStrInfo = x.size()*sizeof(STRING_INFO);
+	size_t cbStrTable = y.size()*sizeof(WCHAR);
+	binfstream in(lpInFile);
+	size_t cbBigBlock = in.GetFileSize() - offStrTable;
+	size_t cbFinal = cbBigBlock + 8 + cbStrTable + cbStrTable;
+	unsigned char * pBuf = new unsigned char[cbFinal];
+	in.read(pBuf, offStrTable);
+	unsigned char * p = &pBuf[offStrTable];
+	*(DWORD *)p = cbStrInfo;
+	p += 4;
+	memcpy(p, &x[0], cbStrInfo);
+	p += cbStrInfo;
+	*(DWORD *)p = cbStrTable;
+	p += 4;
+	memcpy(p, &y[0], cbStrTable);
+	binfstream out(lpOutFile, OF_WRITE);
+	out.write(pBuf,cbFinal);
 	return 0;
 }
 
@@ -326,7 +365,7 @@ int MalieExec::ExportStrByCode(void)
 	}
 
 	auto exportFunc = [&](pair<DWORD,wstring>(&x),FILE *fp){
-		fwprintf(fp,L"¡ğ%08d¡ğ\n%s¡ñ%08d¡ñ\n%s¡ó%08d¡ó\n\n\n",
+		fwprintf(fp,L"â—‹%08dâ—‹\n%sâ—%08dâ—\n%sâ—‡%08dâ—‡\n\n\n",
 			x.first,x.second.c_str(),x.first,x.second.c_str(),x.first);
 	};
 
@@ -351,7 +390,7 @@ int MalieExec::ExportStrByCode(void)
 				wstring kotoba;
 				if (!x.name.empty())
 				{
-					kotoba = x.name+L"¡ù";
+					kotoba = x.name+L"â€»";
 				}
 				kotoba += ParseString(x.index);
 
@@ -372,7 +411,7 @@ int MalieExec::ExportStrByCode(void)
 			wstring kotoba;
 			if (!x.name.empty())
 			{
-				kotoba = x.name+L"¡ù";
+				kotoba = x.name+L"â€»";
 			}
 			kotoba += ParseString(x.index);
 

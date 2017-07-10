@@ -25,7 +25,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	CMalieCHS db(v);
 	MalieExec exec("exec.dat");
 	setlocale(LC_ALL, "Japanese");
-	exec.RebuildVMBinary(db);
+	exec.RebuildVMBinary(db,"exec.dat","exec_chs.dat");
 	exit(0);
 //	MalieExec exec("D:\\Software\\deCrypt\\KDays\\MalieSystem\\Dies irae  -Amantes amentes-\\exec.dat");
 	exec.ExportStrByCode();
