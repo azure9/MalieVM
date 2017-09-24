@@ -267,18 +267,42 @@ wstring MalieExec::ImportString(DWORD dwIndex,wstring chsLine)
 
 	vector<wstring> old_tokens;
 	WCHAR *old_ar = L"\x1\x2\x3\x4\x5\x6\x7\x8\x9\xb\xc\xd\xe\xf\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
-	for (int i = 0; i < oldLine.size(); ++i)
+	for (int i = 0; i < oldLine.size()-1; ++i)
 	{
-		if (oldLine[i] == 0)
+		if (oldLine[i]==0)
 		{
 			oldLine[i] = 1;
+		}
+		if (oldLine[i] == 7 && oldLine[i + 1] == 1)
+		{
+			for (auto j = i; j < oldLine.size(); ++j)
+			{
+				if (oldLine[j] == 0xa)
+				{
+					oldLine[j] = 1;
+					break;
+				}
+			}
 		}
 	}
 	for (auto ch = wcstok(&oldLine[0], old_ar); ch; ch = wcstok(NULL, old_ar))
 	{
 		old_tokens.push_back(ch);
 	}
+	if (tokens.size()>1)
+	{
+		auto it = tokens.end() - 1;
+		if (*it == L" ")
+		{
+			tokens.erase(it);
+		}
 
+	}
+	if (old_tokens.size()!=tokens.size())
+	{
+		fprintf(stderr, "Error! Tokens mismatch! Line %d\n", dwIndex);
+		getchar();
+	}
 	size_t len = 0;
 	size_t token_i = 0;
 	wstring outLine;
@@ -311,15 +335,15 @@ pair<vector<STRING_INFO>, wstring> MalieExec::RebuildStringSection(CMalieCHS &db
 	fprintf(stderr, "VM binary string counts:%d\nLoaded chs string counts:%d\n", vStrIndex.size(), db.GetSize());
 	for (size_t i = 0; i < vStrIndex.size(); ++i)
 	{
-		fprintf(stderr, "Cursor: %d\n", i);
+		//fprintf(stderr, "Cursor: %d\n", i);
 		auto && jis = db.GetString(i);
 		if (jis.empty())
 		{
 			fprintf(stderr, "Error! Empty string got from chs db. Line: %d\n", i);
 		}
 		auto && chs = ImportString(i, jis);
-		vChsIndex.push_back(STRING_INFO(offset, chs.size()));
-		offset += chs.size();
+		vChsIndex.push_back(STRING_INFO(offset, chs.size()*2));
+		offset += chs.size()*2;
 		buf += chs;
 	}
 	return move(pair<vector<STRING_INFO>,wstring>(move(vChsIndex),move(buf)));
@@ -333,12 +357,11 @@ int MalieExec::RebuildVMBinary(CMalieCHS &scene,char *lpInFile,char *lpOutFile)
 	size_t cbStrInfo = x.size()*sizeof(STRING_INFO);
 	size_t cbStrTable = y.size()*sizeof(WCHAR);
 	binfstream in(lpInFile);
-	size_t cbBigBlock = in.GetFileSize() - offStrTable;
-	size_t cbFinal = cbBigBlock + 8 + cbStrTable + cbStrTable;
+	size_t cbFinal = offStrTable + 8 + cbStrInfo+ cbStrTable;
 	unsigned char * pBuf = new unsigned char[cbFinal];
 	in.read(pBuf, offStrTable);
 	unsigned char * p = &pBuf[offStrTable];
-	*(DWORD *)p = cbStrInfo;
+	*(DWORD *)p = x.size();
 	p += 4;
 	memcpy(p, &x[0], cbStrInfo);
 	p += cbStrInfo;
@@ -347,6 +370,7 @@ int MalieExec::RebuildVMBinary(CMalieCHS &scene,char *lpInFile,char *lpOutFile)
 	memcpy(p, &y[0], cbStrTable);
 	binfstream out(lpOutFile, OF_WRITE);
 	out.write(pBuf,cbFinal);
+	delete pBuf;
 	return 0;
 }
 
