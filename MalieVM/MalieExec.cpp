@@ -251,8 +251,6 @@ wstring MalieExec::ImportString(DWORD dwIndex, wstring chsLine)
 		(WCHAR *)&pStrTable[vStrIndex[dwIndex].offset + vStrIndex[dwIndex].length]
 		);
 
-	wstring oldLine(strLine);
-
 	vector<wstring> tokens;
 	auto x = chsLine.find_first_of(L'※');
 	if (x != wstring::npos)
@@ -267,24 +265,26 @@ wstring MalieExec::ImportString(DWORD dwIndex, wstring chsLine)
 
 	vector<wstring> old_tokens;
 	WCHAR *old_ar = L"\x1\x2\x3\x4\x5\x6\x7\x8\x9\xb\xc\xd\xe\xf\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
-	for (int i = 0; i < oldLine.size() - 1; ++i)
+	for (int i = 0; i < strLine.size() - 1; ++i)
 	{
-		if (oldLine[i] == 0)
+		if (strLine[i] == 0)
 		{
-			oldLine[i] = 1;
+			strLine[i] = 0x1f;
 		}
-		if (oldLine[i] == 7 && oldLine[i + 1] == 1)
+		if (strLine[i] == 7 && (strLine[i + 1] == 1 || strLine[i + 1] == 6))
 		{
-			for (auto j = i; j < oldLine.size(); ++j)
+			for (auto j = i; j < strLine.size(); ++j)
 			{
-				if (oldLine[j] == 0xa)
+				if (strLine[j] == 0xa)
 				{
-					oldLine[j] = 1;
+					strLine[j] = 0x1e;
 					break;
 				}
 			}
 		}
 	}
+	wstring oldLine(strLine);
+
 	for (auto ch = wcstok(&oldLine[0], old_ar); ch; ch = wcstok(NULL, old_ar))
 	{
 		old_tokens.push_back(ch);
@@ -307,16 +307,21 @@ wstring MalieExec::ImportString(DWORD dwIndex, wstring chsLine)
 	size_t token_i = 0;
 	wstring outLine;
 
-	outLine.resize(max(chsLine.size(), strLine.size()) + 30);
+	outLine.resize(max(chsLine.size(), strLine.size()) + 200);
 
 	for (size_t idx = 0; idx < strLine.size(); ++idx)
 	{
-		if (strLine[idx] == '\n')
+		if (strLine[idx] < 0x20)
 		{
-			outLine[len++] = '\n';
-		}
-		if (strLine[idx] < 0x20 && strLine[idx] != '\n')
-		{
+			switch (strLine[idx])
+			{
+			case 0x1e:
+				strLine[idx] = 0xA;
+				break;
+			case 0x1f:
+				strLine[idx] = 0;
+				break;
+			}
 			outLine[len++] = strLine[idx];
 		}
 		else
